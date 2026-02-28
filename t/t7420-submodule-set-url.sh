@@ -78,4 +78,28 @@ test_expect_success 'test submodule set-url' '
 	test_cmp expect actual
 '
 
+test_expect_success 'submodule set-url syncs remote url' '
+	test -d "$(git -C super/submodule config remote.origin.url)"
+'
+
+test_expect_success 'submodule set-url warns on non-local resolved url' '
+	(
+		cd super &&
+		git remote add origin https://example.com/superproject.git &&
+		git submodule set-url submodule ../other 2>err &&
+		test_grep "the relative URL.*resolved to" err &&
+		git remote remove origin
+	)
+'
+
+test_expect_success 'submodule set-url --quiet suppresses warning' '
+	(
+		cd super &&
+		git remote add origin https://example.com/superproject.git &&
+		git submodule set-url --quiet submodule ../other 2>err &&
+		test_must_be_empty err &&
+		git remote remove origin
+	)
+'
+
 test_done

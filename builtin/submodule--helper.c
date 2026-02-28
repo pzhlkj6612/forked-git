@@ -35,6 +35,7 @@
 #include "wildmatch.h"
 #include "strbuf.h"
 #include "url.h"
+#include "connect.h"
 
 #define OPT_QUIET (1 << 0)
 #define OPT_CACHED (1 << 1)
@@ -3221,6 +3222,19 @@ static int module_set_url(int argc, const char **argv, const char *prefix,
 	if (!ret) {
 		repo_read_gitmodules(the_repository, 0);
 		sync_submodule(sub->path, prefix, NULL, quiet ? OPT_QUIET : 0);
+
+		if (!quiet &&
+		    (starts_with_dot_dot_slash(newurl) ||
+		     starts_with_dot_slash(newurl))) {
+			char *resolved = resolve_relative_url(newurl, NULL, 1);
+			if (resolved && !url_is_local_not_ssh(resolved))
+				warning(_("the relative URL '%s' resolved to '%s'.\n"
+					  "If this is not the intended URL, "
+					  "consider using an absolute URL or path "
+					  "instead."),
+					newurl, resolved);
+			free(resolved);
+		}
 	}
 
 	free(config_name);
